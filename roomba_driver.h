@@ -2,7 +2,7 @@
 
 #define START 128   // start the Roomba's serial command interface
 #define BAUD  129   // set the SCI's baudrate (default on full power cycle is 57600
-#define CONTROL 130   // enable control via SCI
+#define CONTROL 130 // enable control via SCI
 #define SAFE  131   // enter safe mode
 #define FULL  132   // enter full mode
 #define POWER 133   // put the Roomba to sleep
@@ -10,11 +10,11 @@
 #define CLEAN 135   // start normal cleaning cycle
 #define MAX   136   // start maximum time cleaning cycle
 #define DRIVE 137   // control wheels
-#define MOTORS  138   // turn cleaning motors on or off
+#define MOTORS  138 // turn cleaning motors on or off
 #define LEDS  139   // activate LEDs
 #define SONG  140   // load a song into memory
 #define PLAY  141   // play a song that was loaded using SONG
-#define SENSORS 142   // retrieve one of the sensor packets
+#define SENSORS 142 // retrieve one of the sensor packets
 #define DOCK  143   // force the Roomba to seek its dock.
 #define STOP 173
 

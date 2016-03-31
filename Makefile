@@ -37,3 +37,15 @@ usart_test: usart_test.c
 	$(CC) $(ELFFLAGS) img.elf cswitch.o os.o roomba_driver.o usart_test.o
 
 test: compile usart_test hex load
+
+base_station: base_station.c
+	$(CC) $(FLAGS) base_station.c
+	$(CC) $(ELFFLAGS) img.elf cswitch.o os.o roomba_driver.o base_station.o
+
+base_station: compile base_station hex load
+
+remote_station: remote_station.c
+	$(CC) $(FLAGS) usart_test.c
+	$(CC) $(ELFFLAGS) img.elf cswitch.o os.o roomba_driver.o remote_station.o
+
+remote_station: compile remote_station hex load

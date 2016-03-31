@@ -5,6 +5,6 @@ void a_main() {
 	roomba_init();
 
 	/* start cleaning */
-	usart_write(CLEAN);
+	usart_write(DOCK);
 	Task_Terminate();
 }
