@@ -8,8 +8,6 @@
 #include <Servo.h>
 #include <scheduler.h>
 
-Servo myservo;
-
 int bytes = -1;
 char values[25];
 
@@ -25,8 +23,7 @@ int curr_servo_x= 1500;
 int curr_servo_y= 1500;
 
 void write_servo(){
-  digitalWrite(32, HIGH);
-  digitalWrite(32, LOW);
+  //while(1){
   if(abs(curr_servo_x - servo_x) >= 10){
     if((curr_servo_x - servo_x)>0){
       curr_servo_x -= 10;
@@ -39,25 +36,23 @@ void write_servo(){
     curr_servo_x = servo_x;
     myservo.writeMicroseconds(curr_servo_x);
   }
-  digitalWrite(32, HIGH);
-  digitalWrite(32, LOW);
+  //  task_sleep(task_getarg(write_servo));
+  //}
 }
 
 void write_laser(){
-  digitalWrite(31, HIGH);
-  digitalWrite(31, LOW);
+  //while(1){
   if(!laser_val){
     digitalWrite(laser_pin, HIGH);
   }else{
     digitalWrite(laser_pin, LOW);
-  } 
-  digitalWrite(31, HIGH);
-  digitalWrite(31, LOW);
+  }
+  //  task_sleep(task_getarg(write_laser)));
+  //}
 }
 
 void read_bt(){
-  digitalWrite(30, HIGH);
-  digitalWrite(30, LOW);
+  //while(1){
   while(Serial2.available()){
     char curr = (char)Serial2.read();
     
@@ -72,34 +67,42 @@ void read_bt(){
       bytes++;
     }
   }
-  digitalWrite(30, HIGH);
-  digitalWrite(30, LOW);
+  //  task_sleep(task_getarg(write_laser)));
+  //}
 }
 
-void idle(uint32_t idle_period){
-  delay(idle_period);
-}
-
-void setup(){
-  pinMode(laser_pin, OUTPUT);
-  myservo.attach(2);
-  Serial2.begin(9600);
-  pinMode(30, OUTPUT);
-  pinMode(31, OUTPUT);
-  pinMode(32, OUTPUT);
-  pinMode(33, OUTPUT);
-
-  Scheduler_Init();
-
-  //start offset in ms, period in ms, function callback
-  Scheduler_StartTask(70, 10, write_servo);
-  Scheduler_StartTask(80, 10, write_laser);
-  Scheduler_StartTask(60, 90, read_bt);
-}
-
+/* Create loop function which executes while schedular sleeps
+ *
+ */
 void loop(){
-  uint32_t idle_period = Scheduler_Dispatch();
-  if(idle_period){
-    idle(idle_period);
-  }
+  for(;;);
+}
+
+/*  a_main
+ * 
+ *    Applications main function which initializes pins, and tasks
+ */
+void setup(){
+  //Setup connnection to the roomba here
+  Serial2.begin(9600);  // Set up baud rate for usart communications
+
+  pinMode(laser_pin, OUTPUT); // PORTB = 0x00, DDRB = 0xFF
+  pinMode(30, OUTPUT);        // PORTB = 0x00, DDRB = 0xFF
+  pinMode(31, OUTPUT);        // PORTB = 0x00, DDRB = 0xFF
+  pinMode(32, OUTPUT);        // PORTB = 0x00, DDRB = 0xFF
+  pinMode(33, OUTPUT);        // PORTB = 0x00, DDRB = 0xFF
+
+  // Create each task with their function, priority, and frequency
+  Scheduler_StartTask(70, 10, write_servo); //task_create(write_servo, 1, unknown)
+  Scheduler_StartTask(80, 10, write_laser); //task_create(write_laser, 2, unknown)
+                                            //task_create(avoid, 3, unknown)
+                                            //task_create(auto, 4, unknown)
+  Scheduler_StartTask(60, 90, read_bt);     //task_create(read_bt, 5, unknown)
+                                            //task_create(loop, 6, 0)
+  
+  //  Include subsumption architecture with the following precidence 
+  //    - avoid
+  //    - read_bt
+  //    - auto
+  //for control of write_servo
 }
