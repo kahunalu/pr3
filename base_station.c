@@ -53,10 +53,11 @@ void read_joystick(){
 
 void write_bt(){
   int event = Task_GetArg();
-
+  /*
   char buffer[50];
   sprintf(buffer, "#%d %d %d#", servo_x, servo_y, laser_val);
-  uart1_sendstr(buffer);
+  */
+  BT_UART_Send_Byte('A');
 
   Event_Signal(event);
 }
@@ -72,9 +73,9 @@ void action(){
     Task_Create(write_bt, 3, write_bt_eid);
     Event_Wait(write_bt_eid);
     PORTC = 0x0F;
-    Task_Sleep(100); // sleep for 0.2 seconds
+    Task_Sleep(200); // sleep for 0.2 seconds
     PORTC = 0x00;
-    Task_Sleep(100); // sleep for 0.2 seconds
+    Task_Sleep(200); // sleep for 0.2 seconds
   }
 }
 
@@ -86,8 +87,7 @@ void a_main(){
   DDRC    = 0x0F;
   
   InitADC();
-  uart0_init();
-  uart1_init();
+  BT_UART_Init();
 
   Task_Create(action, 1, 0);
   Task_Create(loop, 8, 0);

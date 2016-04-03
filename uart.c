@@ -36,9 +36,19 @@ void RMB_UART_Send_Byte(uint8_t data_out){
 }
 
 void BT_UART_Send_Byte(uint8_t data_out){
-   while(!( UCSR0A & (1<<UDRE0)));
+   while(!( UCSR1A & (1<<UDRE1)));
 
-   UDR0 = data_out;
+   UDR1 = data_out;
+}
+
+uint8_t RMB_UART_Recv_Byte(void){
+   while(!(UCSR0A & (1<<RXC0)));
+   return UDR0;
+}
+
+uint8_t BT_UART_Recv_Byte(void){
+   while(!(UCSR1A & (1<<RXC1)));
+   return UDR1;
 }
 
 void RMB_UART_Send_String(char *string_out){

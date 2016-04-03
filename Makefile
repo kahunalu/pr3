@@ -38,13 +38,13 @@ base_station: base_station.c
 	$(CC) $(FLAGS) base_station.c
 	$(CC) $(ELFFLAGS) img.elf cswitch.o os.o roomba_driver.o base_station.o adc.o uart.o
 
-base: compile base_station hex loadbase
+base: compile base_station hex load
 
 remote_station: remote_station.c
 	$(CC) $(FLAGS) remote_station.c
 	$(CC) $(ELFFLAGS) img.elf cswitch.o os.o roomba_driver.o remote_station.o adc.o uart.o
 
-remote: compile remote_station hex loadremote
+remote: compile remote_station hex load
 
 test: test.c uart.c os.c cswitch.S
 	$(CC) $(FLAGS) cswitch.S
