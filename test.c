@@ -4,9 +4,8 @@
 #include "os.h"
 
 void a_main(){
-	uart0_init();
-  
+	RMB_UART_Init();
 	for(;;){
-		uart0_sendstr("Hello World");
+		RMB_UART_Send_String("Hello Roomba\n");
 	}
 }

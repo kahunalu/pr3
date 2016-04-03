@@ -1,115 +1,54 @@
 #include "uart.h"
+#include <avr/io.h>
 
-/*Used for redirection streams*/
-FILE uart_output = FDEV_SETUP_STREAM(uart_putchar, NULL, _FDEV_SETUP_WRITE);
-FILE uart_input = FDEV_SETUP_STREAM(NULL, uart_getchar, _FDEV_SETUP_READ);
+void RMB_UART_Init(){  
+   PRR0 &= ~(1 << PRUSART0);
+   UBRR0 = 51;
 
-void uart0_init(void) {
-	UBRR0H = UBRRH_VALUE;
-	UBRR0L = UBRRL_VALUE;
-	
-	#if USE_2X
-	UCSR0A |= _BV(U2X0);
-	#else
-	UCSR0A &= ~(_BV(U2X0));
-	#endif
-
-	UCSR0C = _BV(UCSZ01) | _BV(UCSZ00); /* 8-bit data */
-	UCSR0B = _BV(RXEN0) | _BV(TXEN0);   /* Enable RX and TX */
+   // Clear USART Transmit complete flag, normal USART transmission speed
+   UCSR0A = (1 << TXC0) | (0 << U2X0);
+   // Enable receiver, transmitter, rx complete interrupt and tx complete interupt.
+   UCSR0B = (1<<TXEN0);
+   // 8-bit data
+   UCSR0C = ((1<<UCSZ01)|(3<<UCSZ00));
+   // disable 2x speed
+   UCSR0A &= ~(1<<U2X0);
 }
 
-void uart1_init(void) {
-	UBRR1H = UBRRH_VALUE;
-	UBRR1L = UBRRL_VALUE;
-	
-	#if USE_2X
-	UCSR1A |= _BV(U2X1);
-	#else
-	UCSR1A &= ~(_BV(U2X1));
-	#endif
+void BT_UART_Init(){  
+   PRR1 &= ~(1 << PRUSART1);
+   UBRR1 = 51;
 
-	UCSR1C = _BV(UCSZ11) | _BV(UCSZ10); /* 8-bit data */
-	UCSR1B = _BV(RXEN1) | _BV(TXEN1);   /* Enable RX and TX */
+   // Clear USART Transmit complete flag, normal USART transmission speed
+   UCSR1A = (1 << TXC1) | (0 << U2X1);
+   // Enable receiver, transmitter, rx complete interrupt and tx complete interupt.
+   UCSR1B = (1<<TXEN1);
+   // 8-bit data
+   UCSR1C = ((1<<UCSZ11)|(3<<UCSZ10));
+   // disable 2x speed
+   UCSR1A &= ~(1<<U2X1);
 }
 
-/*Simple Send/Receive characters without streams*/
+void RMB_UART_Send_Byte(uint8_t data_out){
+   while(!( UCSR0A & (1<<UDRE0)));
 
-void uart0_sendbyte(uint8_t data)
-{
-	while(!(UCSR0A & (1<<UDRE0)));
-	UDR0 = data;
+   UDR0 = data_out;
 }
 
-uint8_t uart0_recvbyte(void)
-{
-	while(!(UCSR0A & (1<<RXC0)));
-	return UDR0;
+void BT_UART_Send_Byte(uint8_t data_out){
+   while(!( UCSR0A & (1<<UDRE0)));
+
+   UDR0 = data_out;
 }
 
-void uart0_sendstr(char* input)
-{
-	while(*input != 0x00)
-	{
-		uart0_sendbyte(*input);
-		input++;
-	}
+void RMB_UART_Send_String(char *string_out){
+   for(; *string_out; string_out++){
+      RMB_UART_Send_Byte(*string_out);
+   }
 }
 
-//NEEDS TESTING
-int uart0_recvuntil(char* input, char end_char, uint8_t max_chars)
-{
-	int bytes_read = 0;
-	char cur;
-	
-	do
-	{
-		cur = uart0_recvbyte();
-		input[bytes_read] = cur;
-		bytes_read++;
-	}
-	while(cur != end_char && bytes_read < max_chars);
-
-	return bytes_read;
-}
-
-void uart1_sendbyte(uint8_t data)
-{
-	while(!(UCSR1A & (1<<UDRE1)));
-	UDR1 = data;
-}
-
-uint8_t uart1_recvbyte(void)
-{
-	while(!(UCSR1A & (1<<RXC1)));
-	return UDR1;
-}
-
-void uart1_sendstr(char* input)
-{
-	while(*input != 0x00)
-	{
-		uart1_sendbyte(*input);
-		input++;
-	}
-}
-
-
-/*Functions needed for STDIN/STDOUT redirection only*/
-void uart_putchar(char c, FILE *stream) {
-	if (c == '\n') {
-		uart_putchar('\r', stream);
-	}
-	loop_until_bit_is_set(UCSR0A, UDRE0);
-	UDR0 = c;
-}
-
-char uart_getchar(FILE *stream) {
-	loop_until_bit_is_set(UCSR0A, RXC0);
-	return UDR0;
-}
-
-void uart_setredir(void)
-{
-	stdout = &uart_output;
-	stdin  = &uart_input;
+void BT_UART_Send_String(char *string_out){
+   for(; *string_out; string_out++){
+      BT_UART_Send_Byte(*string_out);
+   }
 }

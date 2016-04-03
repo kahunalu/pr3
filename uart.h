@@ -1,31 +1,19 @@
-#ifndef MY_UART_H
-#define MY_UART_H
+#ifndef USB_UART_H_
+#define UART_H_
+ 
+//#ifndef MEGA_2560
+//  #error "Sonar_SEN136B5B.h can only be used with the MEGA2560"
+//#endif
 
-/*Sources used:
-	http://www.appelsiini.net/2011/simple-usart-with-avr-libc
-	https://hekilledmywire.wordpress.com/2011/01/05/using-the-usartserial-tutorial-part-2/
-*/
+#include <stdint.h>
 
-#define F_CPU 16000000UL
-#define BAUD 19200
-#include <avr/io.h>
-#include <stdio.h>
-#include <util/setbaud.h>
-#include <avr/sfr_defs.h>
+void RMB_UART_Init(void);
+void BT_UART_Init(void);
 
-void uart0_init(void);
-void uart1_init(void);
+void RMB_UART_Send_Byte(uint8_t);
+void BT_UART_Send_Byte(uint8_t);
 
-void uart_putchar(char c, FILE *stream);
-char uart_getchar(FILE *stream);
-void uart_setredir(void);
-
-void uart0_sendbyte(uint8_t data);
-uint8_t uart0_recvbyte(void);
-void uart0_sendstr(char* input);
-
-void uart1_sendbyte(uint8_t data);
-uint8_t uart1_recvbyte(void);
-void uart1_sendstr(char* input);
-
-#endif
+void RMB_UART_Send_String(char*);
+void BT_UART_Send_String(char*);
+ 
+#endif /* USB_UART_H_ */
