@@ -53,11 +53,9 @@ void read_joystick(){
 
 void write_bt(){
   int event = Task_GetArg();
-  /*
-  char buffer[50];
-  sprintf(buffer, "#%d %d %d#", servo_x, servo_y, laser_val);
-  */
-  BT_UART_Send_Byte('A');
+  //char buffer[50];
+  //sprintf(buffer, "#%d %d %d#", servo_x, servo_y, laser_val);
+  BT_UART_Send_Str("hello world");
 
   Event_Signal(event);
 }

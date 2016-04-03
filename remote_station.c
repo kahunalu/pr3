@@ -69,7 +69,9 @@ void man_move(){
   
   PORTC = 0x0F;
   Task_Sleep(50); // sleep for 0.2 seconds
-  char curr = (char)BT_UART_Recv_Byte();
+  //while(!bt_rx);
+  char* curr = BT_UART_Recv();
+  RMB_UART_Send_String(curr);
   PORTC = 0x00;
   Task_Sleep(50); // sleep for 0.2 seconds
   
