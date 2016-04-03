@@ -6,18 +6,12 @@
 	https://hekilledmywire.wordpress.com/2011/01/05/using-the-usartserial-tutorial-part-2/
 */
 
+#define F_CPU 16000000UL
+#define BAUD 19200
 #include <avr/io.h>
 #include <stdio.h>
 #include <util/setbaud.h>
 #include <avr/sfr_defs.h>
-
-#ifndef F_CPU
-	#define F_CPU 16000000UL
-#endif
-
-#ifndef BAUD
-	#define BAUD 19200
-#endif
 
 void uart0_init(void);
 void uart1_init(void);

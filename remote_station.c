@@ -1,13 +1,13 @@
-/*
- * Remote Station Code
- */
-
- /* number of iterations taken to smooth out sensor data */
+#define F_CPU 16000000UL
+#define BAUD 19200
 #define AVERAGE_RUN 10
 
-#include "os.h"
-#include "roomba_driver.h"
+#include "uart.h"
+//#include "adc.h"
+//#include "roomba_driver.h"
 #include <avr/io.h>
+#include <stdio.h>
+#include "os.h"
 
 int bytes = -1;
 char values[25];
@@ -65,23 +65,20 @@ void write_laser(){
 }
 
 void man_move(){
+  char curr;
   int event = Task_GetArg();
   /*
-  while(Serial2.available()){
-    char curr = (char)Serial2.read();
-    
-    if(bytes == -1 && curr=='#'){
-      bytes++;
-    }else if(bytes != -1 && curr=='#'){
-      values[bytes] = '\0';
-      sscanf(values, "%d %d %d", &servo_x, &servo_y, &laser_val);
-      bytes=-1;
-    }else if(bytes != -1 && curr!='#'){
-      values[bytes] = curr;
-      bytes++;
-    }
+  while(bytes == -1 || curr!='#'){
+    curr = (char)uart1_recvbyte();
+    bytes++;
+    values[bytes] = curr;
   }
+
+  values[++bytes] = '\0';
+  sscanf(values, "#%d %d %d#", &servo_x, &servo_y, &laser_val);
+  bytes=-1;
   */
+
   Event_Signal(event);
 }
 
@@ -108,10 +105,10 @@ void action(){
     Task_Create(write_servo, 3, write_laser_eid);
     Task_Create(write_laser, 3, write_servo_eid);
     
-    PORTB = 0x40;
-    Task_Sleep(5); // sleep for 0.2 seconds
-    PORTB = 0x00;
-    Task_Sleep(5); // sleep for 0.2 seconds
+    PORTC = 0x0F;
+    Task_Sleep(50); // sleep for 0.2 seconds
+    PORTC = 0x00;
+    Task_Sleep(50); // sleep for 0.2 seconds
   }
 }
 
@@ -129,10 +126,13 @@ void loop(){
  *    Applications main function which initializes pins, and tasks
  */
 void a_main(){
-  roomba_init();
+  uart0_init();
+  
+  for(;;){
+    uart0_sendstr("hello world");
+  }
 
-  DDRB = 0xF8;
-  PORTB = 0xF8;
+  DDRC = 0x0F;
 
   Task_Create(action, 1, 0);
   Task_Create(loop, 8, 0);  

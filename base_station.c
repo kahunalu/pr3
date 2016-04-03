@@ -1,15 +1,13 @@
-/*
- * Base Station Code
- */
-
- /* number of iterations taken to smooth out sensor data */
 #define AVERAGE_RUN 10
+#define F_CPU 16000000UL
+#define BAUD 19200
 
-#include <Wire.h>  // Comes with Arduino IDE
-#include <LiquidCrystal_I2C.h>
-#include <scheduler.h>
 
-LiquidCrystal_I2C lcd(0x3F, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
+#include "os.h"
+#include <avr/io.h>
+#include <stdio.h>
+#include "adc.h"
+#include "uart.h"
 
 int poll_count  = 0;
 int sensor_pin  = 0; 
@@ -22,98 +20,76 @@ int servo_x     = 1500;
 int servo_y     = 1500;
 int laser_val   = 0;
 
-/*returns averaged analog data rounded to an integer*/
 int read(int pin, int avg[]) {
-  avg[poll_count] = analogRead(pin);
+  // Change this
+  avg[poll_count] = readadc(pin);
+  
   int sum = 0;
   int i   = 0;
   for(i = 0; i < AVERAGE_RUN; i++){ 
     sum += avg[i];
   }
+
   return (sum/AVERAGE_RUN);
 }
 
-void print_status() {
-  digitalWrite(32, HIGH);
-  digitalWrite(32, LOW);  
-  /* print servo position */
-  lcd.print(servo_x);
-  lcd.print(", ");
-  lcd.print(servo_y);
-  lcd.print("                ");
-  lcd.setCursor(0,1);
-
-  /* laser fired this round? */
-  if(!laser_val){
-    lcd.print(" SW, ");
-  }else{
-    lcd.print("!SW, ");
-  }
-
-  /*if a laser is detected print shot */
-  if(analogRead(sensor_pin)>100){
-    lcd.print(" SHOT");
-  }else{
-    lcd.print("!SHOT");
-  }
-  
-  lcd.print("                ");
-  lcd.setCursor(0,0);
-  digitalWrite(32, HIGH);
-  digitalWrite(32, LOW);  
-}
-
 void read_joystick(){
-  digitalWrite(30, HIGH);
-  digitalWrite(30, LOW);
-  /* mapping joystick values to servo*/
-  servo_x = map(read(15, VRx_avg),0,1023,2400,600);
-  laser_val = analogRead(13);
-
+  int event = Task_GetArg();
+  
+  //Rewrite map functionality
+  servo_x = read(0, VRx_avg);
+  servo_y = read(1, VRx_avg);
+  
+  //Use analog read functionality
+  laser_val = readadc(2);
   poll_count++;
 
-  /* Each ten iterations update system status on LCD screen */
   if(poll_count == AVERAGE_RUN){
     poll_count = 0;
   }
-  digitalWrite(30, HIGH);
-  digitalWrite(30, LOW);
+ 
+  Event_Signal(event);
 }
 
 void write_bt(){
-  digitalWrite(31, HIGH);
-  digitalWrite(31, LOW);
+  int event = Task_GetArg();
+
   char buffer[50];
   sprintf(buffer, "#%d %d %d#", servo_x, servo_y, laser_val);
-  Serial1.println(buffer);
-  
-  digitalWrite(31, HIGH);
-  digitalWrite(31, LOW);  
+  uart1_sendstr(buffer);
+
+  Event_Signal(event);
 }
 
-void idle(uint32_t idle_period){
-  delay(idle_period);
-}
+void action(){
+  int read_joystick_eid = Event_Init();
+  int write_bt_eid      = Event_Init();
 
-void setup(){
-  Serial1.begin(9600);
-  lcd.begin(16,2);
+  for(;;){
+    Task_Create(read_joystick, 2, read_joystick_eid);
+    Event_Wait(read_joystick_eid);
 
-  pinMode(30, OUTPUT);
-  pinMode(31, OUTPUT);
-  pinMode(32, OUTPUT);
-  pinMode(33, OUTPUT);
-
-  Scheduler_Init();
-  //start offset in ms, period in ms, function callback
-  Scheduler_StartTask(10, 90, write_bt);
-  Scheduler_StartTask(0, 90, read_joystick);
-  Scheduler_StartTask(30, 180, print_status);
+    Task_Create(write_bt, 3, write_bt_eid);
+    Event_Wait(write_bt_eid);
+    PORTC = 0x0F;
+    Task_Sleep(100); // sleep for 0.2 seconds
+    PORTC = 0x00;
+    Task_Sleep(100); // sleep for 0.2 seconds
+  }
 }
 
 void loop(){
-  uint32_t idle_period = Scheduler_Dispatch();
-  if (idle_period){
-    idle(idle_period);
-  }
+  for(;;);
+}
+
+void a_main(){
+  DDRC    = 0x0F;
+  
+  InitADC();
+  uart0_init();
+  uart1_init();
+
+  Task_Create(action, 1, 0);
+  Task_Create(loop, 8, 0);
+  Task_Terminate();
 }

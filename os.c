@@ -3,8 +3,6 @@
 #include "os.h"
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#define F_CPU 16000000UL
-#include <util/delay.h>
 
 //Comment out the following line to remove debugging code from compiled version.
 #define DEBUG
@@ -71,11 +69,8 @@ void error() {
   int i;
   for(i = 0; i < err_no+1; i++) {
     PORTB = 0x80;
-    _delay_ms(200);
     PORTB = 0x00;
-    _delay_ms(200);
   }
-  _delay_ms(1000);
 }
 
 /**

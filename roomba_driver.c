@@ -1,8 +1,8 @@
+#define BAUDR 19200
+#define F_CPU 16000000UL
 #include "roomba_driver.h"
 #include <util/delay.h>
 #include <avr/io.h>
-#define F_CPU 16000000UL
-#define BAUDR 19200
 ROOMBA_BITRATE BR = ROOMBA_57600BPS;
 #define BAUDRATE ((F_CPU)/(BAUDR*16UL)-1)
 
