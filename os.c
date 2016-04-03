@@ -75,7 +75,7 @@ void error() {
     PORTB = 0x00;
     _delay_ms(200);
   }
-  _delay_ms(400);
+  _delay_ms(1000);
 }
 
 /**

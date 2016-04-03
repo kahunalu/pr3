@@ -1,119 +1,141 @@
 /*
- * Base Station Code
+ * Remote Station Code
  */
 
  /* number of iterations taken to smooth out sensor data */
 #define AVERAGE_RUN 10
 
-#include <Wire.h>  // Comes with Arduino IDE
-#include <LiquidCrystal_I2C.h>
-#include <scheduler.h>
+#include "os.h"
+#include "roomba_driver.h"
+#include <avr/io.h>
 
-LiquidCrystal_I2C lcd(0x3F, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
+int bytes = -1;
+char values[25];
 
 int poll_count  = 0;
-int sensor_pin  = 0; 
-
-int VRx_avg[10] = {0,0,0,0,0,0,0,0,0,0};
-int VRy_avg[10] = {0,0,0,0,0,0,0,0,0,0};
-int LS_avg[10]  = {0,0,0,0,0,0,0,0,0,0};
+int laser_pin   = 13;
 
 int servo_x     = 1500;
 int servo_y     = 1500;
 int laser_val   = 0;
 
-/*returns averaged analog data rounded to an integer*/
-int read(int pin, int avg[]) {
-  avg[poll_count] = analogRead(pin);
-  int sum = 0;
-  int i   = 0;
-  for(i = 0; i < AVERAGE_RUN; i++){ 
-    sum += avg[i];
-  }
-  return (sum/AVERAGE_RUN);
+/*initialize current servo values to the center position */
+int curr_servo_x= 1500;
+int curr_servo_y= 1500;
+
+void auto_move(){
+  int event = Task_GetArg();
+  Event_Signal(event);
 }
 
-void print_status() {
-  digitalWrite(32, HIGH);
-  digitalWrite(32, LOW);  
-  /* print servo position */
-  lcd.print(servo_x);
-  lcd.print(", ");
-  lcd.print(servo_y);
-  lcd.print("                ");
-  lcd.setCursor(0,1);
+void avoid_move(){
+  int event = Task_GetArg();
+  Event_Signal(event);
+}
 
-  /* laser fired this round? */
+void write_servo(){
+  int event = Task_GetArg();
+  /*
+  if(abs(curr_servo_x - servo_x) >= 10){
+    if((curr_servo_x - servo_x)>0){
+      curr_servo_x -= 10;
+      myservo.writeMicroseconds(curr_servo_x);
+    }else{
+      curr_servo_x += 10;
+      myservo.writeMicroseconds(curr_servo_x);
+    }
+  }else{
+    curr_servo_x = servo_x;
+    myservo.writeMicroseconds(curr_servo_x);
+  }
+  */
+  Event_Signal(event);
+}
+
+void write_laser(){
+  int event = Task_GetArg();
+  /*
   if(!laser_val){
-    lcd.print(" SW, ");
+    digitalWrite(laser_pin, HIGH);
   }else{
-    lcd.print("!SW, ");
+    digitalWrite(laser_pin, LOW);
   }
+  */
+  Event_Signal(event);
+}
 
-  /*if a laser is detected print shot */
-  if(analogRead(sensor_pin)>100){
-    lcd.print(" SHOT");
-  }else{
-    lcd.print("!SHOT");
+void man_move(){
+  int event = Task_GetArg();
+  /*
+  while(Serial2.available()){
+    char curr = (char)Serial2.read();
+    
+    if(bytes == -1 && curr=='#'){
+      bytes++;
+    }else if(bytes != -1 && curr=='#'){
+      values[bytes] = '\0';
+      sscanf(values, "%d %d %d", &servo_x, &servo_y, &laser_val);
+      bytes=-1;
+    }else if(bytes != -1 && curr!='#'){
+      values[bytes] = curr;
+      bytes++;
+    }
   }
+  */
+  Event_Signal(event);
+}
+
+/*
+ * action
+ * Handles creating the tasks and scheduling the output
+ *
+ */
+void action(){
+  int avoid_move_eid  = Event_Init();
+  int man_move_eid    = Event_Init();
   
-  lcd.print("                ");
-  lcd.setCursor(0,0);
-  digitalWrite(32, HIGH);
-  digitalWrite(32, LOW);  
-}
+  int write_laser_eid = Event_Init();
+  int write_servo_eid = Event_Init();
 
-void read_joystick(){
-  digitalWrite(30, HIGH);
-  digitalWrite(30, LOW);
-  /* mapping joystick values to servo*/
-  servo_x = map(read(15, VRx_avg),0,1023,2400,600);
-  laser_val = analogRead(13);
+  for(;;){
+    
+    Task_Create(avoid_move, 2, avoid_move_eid);
+    Task_Create(man_move, 2, man_move_eid);
+    
+    Event_Wait(avoid_move_eid);
+    Event_Wait(man_move_eid);
 
-  poll_count++;
-
-  /* Each ten iterations update system status on LCD screen */
-  if(poll_count == AVERAGE_RUN){
-    poll_count = 0;
+    Task_Create(write_servo, 3, write_laser_eid);
+    Task_Create(write_laser, 3, write_servo_eid);
+    
+    PORTB = 0x40;
+    Task_Sleep(5); // sleep for 0.2 seconds
+    PORTB = 0x00;
+    Task_Sleep(5); // sleep for 0.2 seconds
   }
-  digitalWrite(30, HIGH);
-  digitalWrite(30, LOW);
 }
 
-void write_bt(){
-  digitalWrite(31, HIGH);
-  digitalWrite(31, LOW);
-  char buffer[50];
-  sprintf(buffer, "#%d %d %d#", servo_x, servo_y, laser_val);
-  Serial1.println(buffer);
-  
-  digitalWrite(31, HIGH);
-  digitalWrite(31, LOW);  
-}
 
-void idle(uint32_t idle_period){
-  delay(idle_period);
-}
-
-void setup(){
-  Serial1.begin(9600);
-  lcd.begin(16,2);
-
-  pinMode(30, OUTPUT);
-  pinMode(31, OUTPUT);
-  pinMode(32, OUTPUT);
-  pinMode(33, OUTPUT);
-
-  Scheduler_Init();
-  //start offset in ms, period in ms, function callback
-  Scheduler_StartTask(10, 90, write_bt);
-  Scheduler_StartTask(0, 90, read_joystick);
-  Scheduler_StartTask(30, 180, print_status);
-}
-
+/* Create loop function which executes while schedular sleeps
+ *
+ */
 void loop(){
-  uint32_t idle_period = Scheduler_Dispatch();
-  if (idle_period){
-    idle(idle_period);
-  }
+  for(;;);
+}
+
+
+/*  a_main
+ * 
+ *    Applications main function which initializes pins, and tasks
+ */
+void a_main(){
+  roomba_init();
+
+  DDRB = 0xF8;
+  PORTB = 0xF8;
+
+  Task_Create(action, 1, 0);
+  Task_Create(loop, 8, 0);  
+
+  Task_Terminate();
 }
