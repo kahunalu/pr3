@@ -381,6 +381,8 @@ void Kernel_Event_Signal(EVENT e) {
   Event[index].signalled = 1;
   if(Event[index].waiting_p != NULL) {
     //change waiting task's state to READY
+    PORTA |= (1<<PA0);
+    PORTA &= ~(1<<PA0);
     Event[index].waiting_p->state = READY;
     Event[index].waiting_p = NULL;
     Event[index].signalled = 0;
@@ -547,7 +549,11 @@ static void Next_Kernel_Request() {
         break;
       case EVENT_SIGNAL:
         Kernel_Event_Signal(Cp->e);
-        if(Preemptive_Check()) Dispatch();
+        if(Preemptive_Check()) {
+          PORTA |= (1<<PA1);
+          PORTA &= ~(1<<PA1);
+          Dispatch();
+        }
         break;
       default:
         /* System Failure if entered */
@@ -710,7 +716,6 @@ void Task_Sleep(TICK t){
 };
 
 ISR(TIMER1_COMPA_vect){
-  PORTB = 0x80;
   // Initialize linked list pointers
   struct sleep_node *curr_sleep_node = sleep_queue_head;
   struct sleep_node *next_sleep_node = curr_sleep_node->next;
@@ -749,7 +754,6 @@ ISR(TIMER1_COMPA_vect){
   }else{
     TCNT1   = 0;
   }
-  PORTB = 0x00;
 }
 
 void enter_sleep_queue(){

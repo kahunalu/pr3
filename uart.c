@@ -1,5 +1,8 @@
 #include "uart.h"
 #include <avr/io.h>
+#define BT_BAUDRATE 9600
+#define F_CPU 16000000UL
+#define BT_UBRR (F_CPU/(16UL*BT_BAUDRATE)) - 1
 
 void RMB_UART_Init(){  
    PRR0 &= ~(1 << PRUSART0);
@@ -17,7 +20,7 @@ void RMB_UART_Init(){
 
 void BT_UART_Init(){  
    PRR1 &= ~(1 << PRUSART1);
-   UBRR1 = 51;
+   UBRR1 = BT_UBRR;
 
    // Clear USART Transmit complete flag, normal USART transmission speed
    UCSR1A = (1 << TXC1) | (0 << U2X1);
@@ -36,9 +39,9 @@ void RMB_UART_Send_Byte(uint8_t data_out){
 }
 
 void BT_UART_Send_Byte(uint8_t data_out){
-   while(!( UCSR0A & (1<<UDRE0)));
+   while(!( UCSR1A & (1<<UDRE1)));
 
-   UDR0 = data_out;
+   UDR1 = data_out;
 }
 
 void RMB_UART_Send_String(char *string_out){
