@@ -1,5 +1,4 @@
 #define F_CPU 16000000UL
-#define BAUD 19200
 #define AVERAGE_RUN 10
 
 #include "uart.h"
@@ -8,15 +7,21 @@
 #include <avr/io.h>
 #include <stdio.h>
 #include "os.h"
+#include "roomba_driver.h"
 
 extern int bt_bytes;
 extern int bt_recv_eid;
+
+int bytes_read = 0;
+int read_index = 0;
 
 int laser_pin   = 13;
 
 int x     = 0;
 int y     = 0;
 int laser_val   = 0;
+int rv;
+int lv;
 
 void auto_move(){
   int event = Task_GetArg();
@@ -49,10 +54,6 @@ void avoid_move(){
 }
 */
 
-/*void map_movement() {
-
-}*/
-
 
 void write_laser(){
   int event = Task_GetArg();
@@ -65,38 +66,41 @@ void write_laser(){
 
 void man_move(){
   int event = Task_GetArg();
-  bt_recv_eid     = Event_Init();
-  
-  for(;;) {
-    /* wait for next bluetooth packet */
-    Event_Wait(bt_recv_eid);
-    PORTC = 0x0F;
-    Task_Sleep(20); // sleep for 0.2 seconds
+
+  x = x - 127;
+  y = y- 127;
+
+  x = x*4;
+  y = y*4;
+
+  rv = y+x;
+  lv = y-x;
+
+  /* [145] [Right velocity high byte] [Right velocity low byte] [Left velocity high byte]
+[Left velocity low byte]  */
+
+  RMB_UART_Send_Byte(DRIVE_D);
+  RMB_UART_Send_Byte((uint8_t)(rv>>8));
+  RMB_UART_Send_Byte((uint8_t)rv);
+  RMB_UART_Send_Byte((uint8_t)(lv>>8));
+  RMB_UART_Send_Byte((uint8_t)lv);
 
 
-    char* curr = BT_UART_Recv();
-    //RMB_UART_Send_String(curr);
-    PORTC = 0x00;
-    Task_Sleep(20); // sleep for 0.2 seconds
-    
-    Event_Signal(event);
-  }
-  
+
+
+  Event_Signal(event);
 }
 
 void read_bt() {
   int event       = Task_GetArg();
-  bt_recv_eid     = Event_Init();
-  int read_index = 0;
-  int bytes_read = 0;
-  uint8_t *buff, curr;
-  uint8_t packet[10];
   
-  for(;;) {
+
+
+  uint8_t *buff, curr;
+  
 
     /* wait for next byte*/
 
-    Event_Wait(bt_recv_eid);
     buff = BT_UART_Recv(); 
 
     while(read_index != bt_bytes) {
@@ -124,10 +128,6 @@ void read_bt() {
       read_index = (read_index + 1) % UART_BUFFER_SIZE;
     }
 
-
-    
-  }
-
 }
 
 /*
@@ -140,27 +140,36 @@ void action(){
   int man_move_eid    = Event_Init();
   int packet_recv_eid = Event_Init();
   int mapped_eid = Event_Init();
+  bt_recv_eid     = Event_Init();
   
   int write_laser_eid = Event_Init();
   //int write_servo_eid = Event_Init();
 
-  //Task_Create(read_bt, 2, packet_recv_eid);
+  
 
   for(;;){
     //Task_Create(avoid_move, 2, avoid_move_eid);
     
     //Event_Wait(avoid_move_eid);
-    //Event_Wait(packet_recv_eid);
+
+    RMB_UART_Send_Byte(0);
+    RMB_UART_Send_Byte(1);
+    RMB_UART_Send_Byte(2);
+
+
+
     Event_Wait(bt_recv_eid);
+    /*RMB_UART_Send_Byte(1);
+    Task_Create(read_bt, 2, packet_recv_eid);
+    Event_Wait(packet_recv_eid);
 
+    Task_Create(write_laser, 3, write_laser_eid);
+    Task_Create(man_move, 2, man_move_eid);
 
-    /*Task_Create(map_movement, 2, mapped_eid);
-    Event_Wait(mapped_eid);
-    Task_Create(man_move_eid, 2, man_move_eid);
-    Event_Wait(man_move_eid);*/
+    Event_Wait(write_laser_eid);
+    Event_Wait(man_move_eid);
 
     //Task_Create(write_servo, 3, write_servo_eid);
-    //Task_Create(write_laser, 3, write_laser_eid);
   }
 }
 
@@ -178,10 +187,10 @@ void loop(){
  *    Applications main function which initializes pins, and tasks
  */
 void a_main(){
-  //RMB_UART_Init();
+  RMB_UART_Init();
   BTRemote_UART_Init(); 
 
-  roomba_init(); 
+  roomba_init(); /* works */
   
   DDRC = 0x0F;
 

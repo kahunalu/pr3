@@ -3,29 +3,32 @@
 #include "roomba_driver.h"
 #include <util/delay.h>
 #include <avr/io.h>
+#include "uart.h"
+#include "os.h"
 ROOMBA_BITRATE BR = ROOMBA_57600BPS;
 #define BAUDRATE ((F_CPU)/(BAUDR*16UL)-1)
 
 
 /* Wakes Roomba up from sleep by setting device detect to low for 500 ms */
 void wake_up() {
-	DDRA = (1<<DDPIN);		//Set DDPIN to output (pin 22)
-	PORTA |= (1<<DDPIN);
+	
+	PORTB |= (1<<DDPIN);
 	_delay_ms(100);
-	PORTA &= ~(1<<DDPIN);	//Set pin to 0
-	_delay_ms(3000);			//Wait 2 s
+	PORTB &= ~(1<<DDPIN);	//Set pin to 0
+	_delay_ms(100);			//Wait 2 s
 
-	PORTA |= (1<<DDPIN);
+
+	PORTB |= (1<<DDPIN);
 	_delay_ms(100);
-	PORTA &= ~(1<<DDPIN);
+	PORTB &= ~(1<<DDPIN);
 	_delay_ms(100);
-	PORTA |= (1<<DDPIN);
+	PORTB |= (1<<DDPIN);
 	_delay_ms(100);
-	PORTA &= ~(1<<DDPIN);
+	PORTB &= ~(1<<DDPIN);
 	_delay_ms(100);
-	PORTA |= (1<<DDPIN);
+	PORTB |= (1<<DDPIN);
 	_delay_ms(100);
-	PORTA &= ~(1<<DDPIN);
+	PORTB &= ~(1<<DDPIN);
 	_delay_ms(100);
 	
 }
@@ -56,12 +59,13 @@ unsigned char usart_read() {
 }
 
 void roomba_init() {
-	wake_up();
 
-	usart_write(START);
+	//wake_up();
+
+	RMB_UART_Send_Byte(START);
 	_delay_ms(200);
 
 	/* Put Roomba into control (safe) mode */
-	usart_write(SAFE);
+	RMB_UART_Send_Byte(SAFE);
 
 }

@@ -4,6 +4,7 @@
 #define F_CPU 16000000UL
 #define BT_UBRR (F_CPU/(16UL*BT_BAUDRATE)) - 1
 #include <avr/interrupt.h>
+#include "os.h"
 
 static volatile int rmb_rxn = 0;
 static volatile int rmb_bytes = 0;
@@ -15,20 +16,19 @@ static volatile uint8_t bt_buffer[UART_BUFFER_SIZE];
 
 
 /*
- * Initialize the BT Uart
+ * Initialize the ROOMBA Uart
  */
 void RMB_UART_Init(){
-  PRR0 &= ~(1 << PRUSART0);
-  UBRR0 = 51;
+  UBRR2 = 51;
 
   // Clear USART Transmit complete flag, normal USART transmission speed
-  UCSR0A = (1 << TXC0) | (0 << U2X0);
+  UCSR2A = (1 << TXC2) | (0 << U2X2);
   // Enable receiver, transmitter, rx complete interrupt and tx complete interupt.
-  UCSR0B |= (1<<RXEN1)|(1<<TXEN1)|(1<<RXCIE1)|(1<<TXCIE1);
+  UCSR2B |= (1<<RXEN2)|(1<<TXEN2)/*|(1<<RXCIE2)|(1<<TXCIE2)*/;
   // 8-bit data
-  UCSR0C = ((1<<UCSZ01)|(3<<UCSZ00));
+  UCSR2C = ((1<<UCSZ21)|(3<<UCSZ20));
   // disable 2x speed
-  UCSR0A &= ~(1<<U2X0);
+  UCSR2A &= ~(1<<U2X2);
 }
 
 /*
@@ -70,8 +70,8 @@ void BTRemote_UART_Init(){
  * Send byte accross RMB
  */
 void RMB_UART_Send_Byte(uint8_t data_out){
-  while(!( UCSR0A & (1<<UDRE0)));
-  UDR0 = data_out;
+  while(!( UCSR2A & (1<<UDRE2)));
+  UDR2 = data_out;
 }
 
 /*
@@ -122,10 +122,10 @@ char * BT_UART_Recv(void){
 /*
  * Fill ROOMBA buffer with data
  */
-ISR(USART0_RX_vect){
-  while (!(UCSR0A & (1<<RXC0)));
+ISR(USART2_RX_vect){
+  while (!(UCSR2A & (1<<RXC2)));
 
-  rmb_buffer[rmb_bytes] = UDR0;
+  rmb_buffer[rmb_bytes] = UDR2;
   rmb_bytes = (rmb_bytes + 1) % UART_BUFFER_SIZE;
   rmb_rx = 1;
 }

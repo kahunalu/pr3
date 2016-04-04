@@ -9,7 +9,7 @@
 #define SPOT  134   // start spot cleaning cycle
 #define CLEAN 135   // start normal cleaning cycle
 #define MAX   136   // start maximum time cleaning cycle
-#define DRIVE 137   // control wheels
+#define DRIVE_D 145   // control wheels
 #define MOTORS  138 // turn cleaning motors on or off
 #define LEDS  139   // activate LEDs
 #define SONG  140   // load a song into memory
@@ -18,9 +18,7 @@
 #define DOCK  143   // force the Roomba to seek its dock.
 #define STOP 173
 
-#define DDPIN PA0	// Device Detect Input pin = pin 22
-#define TPORT PE1	//Serial UART transmit port
-#define RPORT PE0	//Serial UART receive port
+#define DDPIN PB6	// Device Detect Input pin = pin 22
 
 /// Arguments to the BAUD command
 typedef enum _br {
@@ -38,6 +36,4 @@ typedef enum _br {
   ROOMBA_115200BPS = 11,
 } ROOMBA_BITRATE;
 
-void usart_write(unsigned char);
-unsigned char usart_read(void);
 void roomba_init(void);
