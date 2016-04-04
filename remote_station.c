@@ -65,20 +65,16 @@ void write_laser(){
 }
 
 void man_move(){
-  char curr;
   int event = Task_GetArg();
-  /*
-  while(bytes == -1 || curr!='#'){
-    curr = (char)uart1_recvbyte();
-    bytes++;
-    values[bytes] = curr;
-  }
-
-  values[++bytes] = '\0';
-  sscanf(values, "#%d %d %d#", &servo_x, &servo_y, &laser_val);
-  bytes=-1;
-  */
-
+  
+  PORTC = 0x0F;
+  Task_Sleep(50); // sleep for 0.2 seconds
+  //while(!bt_rx);
+  char* curr = BT_UART_Recv();
+  RMB_UART_Send_String(curr);
+  PORTC = 0x00;
+  Task_Sleep(50); // sleep for 0.2 seconds
+  
   Event_Signal(event);
 }
 
@@ -95,7 +91,6 @@ void action(){
   int write_servo_eid = Event_Init();
 
   for(;;){
-    
     Task_Create(avoid_move, 2, avoid_move_eid);
     Task_Create(man_move, 2, man_move_eid);
     
@@ -104,11 +99,6 @@ void action(){
 
     Task_Create(write_servo, 3, write_laser_eid);
     Task_Create(write_laser, 3, write_servo_eid);
-    
-    PORTC = 0x0F;
-    Task_Sleep(50); // sleep for 0.2 seconds
-    PORTC = 0x00;
-    Task_Sleep(50); // sleep for 0.2 seconds
   }
 }
 
@@ -126,12 +116,9 @@ void loop(){
  *    Applications main function which initializes pins, and tasks
  */
 void a_main(){
-  uart0_init();
+  RMB_UART_Init();
+  BT_UART_Init();  
   
-  for(;;){
-    uart0_sendstr("hello world");
-  }
-
   DDRC = 0x0F;
 
   Task_Create(action, 1, 0);

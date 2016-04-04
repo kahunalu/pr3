@@ -8,7 +8,6 @@
 #include "adc.h"
 #include "uart.h"
 #include <string.h>
-#include <util/delay.h>
 
 int poll_count  = 0;
 int sensor_pin  = 0; 
@@ -116,7 +115,6 @@ void a_main(){
   DDRA |= (1<<PA0)|(1<<PA1);
   
   InitADC();
-  RMB_UART_Init();
   BT_UART_Init();
 
   Task_Create(action, 1, 0);
