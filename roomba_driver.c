@@ -57,7 +57,6 @@ unsigned char usart_read() {
 
 void roomba_init() {
 	wake_up();
-	usart_init();
 
 	usart_write(START);
 	_delay_ms(200);

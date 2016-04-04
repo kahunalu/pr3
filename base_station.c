@@ -51,8 +51,14 @@ void read_joystick(){
 
     PORTB |= (1<<PB7);
     x = (readadc(2)>>2);
+    if(x == 255) {
+      x == 254;
+    }
     //x = smooth_read(2, VRx_avg, &x_sum);
     y = (readadc(3)>>2);
+    if(y == 255) {
+      y == 254;
+    }
     //y = smooth_read(3, VRy_avg, &y_sum);
     laser_val = (readadc(4)>>2);
 
@@ -115,7 +121,7 @@ void a_main(){
   DDRA |= (1<<PA0)|(1<<PA1);
   
   InitADC();
-  BT_UART_Init();
+  BTBase_UART_Init();
 
   Task_Create(action, 1, 0);
   Task_Create(loop, 8, 0);

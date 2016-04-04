@@ -7,8 +7,10 @@
 volatile uint8_t rmb_rx; 				// Flag to indicate uart received a byte
 volatile uint8_t bt_rx; 				// Flag to indicate uart received a byte
 
+
 void RMB_UART_Init(void);
-void BT_UART_Init(void);
+void BTRemote_UART_Init(void);
+void BTBase_UART_Init(void);
 
 void RMB_UART_Send_Byte(uint8_t);
 void BT_UART_Send_Byte(uint8_t);
