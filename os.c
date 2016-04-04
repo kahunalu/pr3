@@ -1,8 +1,10 @@
 #include "os.h"
 #include "osinternal.h"
 #include <avr/io.h>
-#include <util/delay.h>
 #define F_CPU 16000000UL
+#include <util/delay.h>
+#include <string.h>
+
 
 
 
@@ -86,9 +88,10 @@ static int Dispatch()
 */
     int breaker = 0;
     //for each priority, starting from highest
-    for(int i = 0; i<MINPRIORITY;i++) {
+    int i, j;
+    for(i = 0; i<MINPRIORITY;i++) {
       //check each element, if one is found ready, the use it
-      for(int j = 0; j<PriorityCounts[i]; j++) {
+      for(j = 0; j<PriorityCounts[i]; j++) {
         if (Process[RunList[i][0]].state == READY) {
 
           Cp = &(Process[RunList[i][0]]);
@@ -233,26 +236,6 @@ void Kernel_Task_Sleep(TICK t) {
   Cp->state = SLEEPING;
 }
 
-PID  Task_Create( void (*f)(void), PRIORITY py, int arg) {
-  if (KernelActive){
-  Disable_Interrupt();
-    Cp->request = CREATE;
-    Cp->code = f;
-    Cp->newpriority = py;
-    Cp->param = arg;
-
-    asm ( "call Enter_Kernel":: );
-
-    return Cp->passthrough;
-  
-  } else {
-    return Kernel_Create_Task(f,py,arg);
-  }
-  
-}
-
-
-
 /**
      Create a new task
 */
@@ -327,6 +310,28 @@ static PID Kernel_Create_Task( voidfuncptr f, PRIORITY py, int arg )
 
 }
 
+PID  Task_Create( void (*f)(void), PRIORITY py, int arg) {
+  if (KernelActive){
+  Disable_Interrupt();
+    Cp->request = CREATE;
+    Cp->code = (voidfuncptr) f;
+    Cp->newpriority = py;
+    Cp->param = arg;
+
+    asm ( "call Enter_Kernel":: );
+
+    return Cp->passthrough;
+  
+  } else {
+    return Kernel_Create_Task(f,py,arg);
+  }
+  
+}
+
+
+
+
+
 void BackgroundTask(int parameter) {
   for(;;) {
   PORTL |= (1<<PL1);
@@ -336,7 +341,7 @@ void BackgroundTask(int parameter) {
   }
 }
 
-volatile boolean ticks = 0;
+volatile int ticks = 0;
 // timer3 isr
 /*
 ISR(TIMER3_COMPA_vect) {

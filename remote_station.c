@@ -169,7 +169,7 @@ void action(){
     Event_Wait(write_laser_eid);
     Event_Wait(man_move_eid);
 
-    //Task_Create(write_servo, 3, write_servo_eid);
+    //Task_Create(write_servo, 3, write_servo_eid);*/
   }
 }
 

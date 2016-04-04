@@ -15,12 +15,17 @@ endif
 
 all: clean compile elf hex load
 
-compile: cswitch.S os.c roomba_driver.c adc.c uart.c
+compile: cswitch.S os.c event.c mutex.c roomba_driver.c adc.c uart.c
 	$(CC) $(FLAGS) os.c
 	$(CC) $(FLAGS) adc.c
 	$(CC) $(FLAGS) uart.c
 	$(CC) $(FLAGS) cswitch.S
 	$(CC) $(FLAGS) roomba_driver.c
+	$(CC) $(FLAGS) event.c
+	$(CC) $(FLAGS) mutex.c
+
+	
+
 
 elf: cswitch.o os.o
 	$(CC) $(ELFFLAGS) img.elf cswitch.o os.o
@@ -36,13 +41,13 @@ clean:
 
 base_station: base_station.c
 	$(CC) $(FLAGS) base_station.c
-	$(CC) $(ELFFLAGS) img.elf cswitch.o os.o roomba_driver.o base_station.o adc.o uart.o
+	$(CC) $(ELFFLAGS) img.elf cswitch.o os.o roomba_driver.o base_station.o adc.o uart.o mutex.o event.o
 
 base: compile base_station hex load
 
 remote_station: remote_station.c
 	$(CC) $(FLAGS) remote_station.c
-	$(CC) $(ELFFLAGS) img.elf cswitch.o os.o roomba_driver.o remote_station.o adc.o uart.o
+	$(CC) $(ELFFLAGS) img.elf cswitch.o os.o roomba_driver.o remote_station.o adc.o uart.o mutex.o event.o
 
 remote: compile remote_station hex load
 

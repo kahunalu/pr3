@@ -2,7 +2,8 @@
 #define _OSINTERNAL_H_  
 #include "os.h"
 
-
+#define Disable_Interrupt()   asm volatile ("cli"::)
+#define Enable_Interrupt()    asm volatile ("sei"::)
 
 typedef void (*voidfuncptr) (int);      /* pointer to void f(void) */
 
